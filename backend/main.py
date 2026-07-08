@@ -3,14 +3,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi.middleware.cors import CORSMiddleware
 from database import engine, SessionLocal
 import models
-from routers import users
+from routers import users, router_auth
 from sqlalchemy import text
 from database import get_db
 
-models.Base.metadata.create_all(bind=engine)
+
 
 app = FastAPI()
 
+@app.on_event("startup")
+async def startup():
+    async with engine.begin() as conn:
+        await conn.run_sync(models.Base.metadata.create_all)
 
 app.add_middleware(
     CORSMiddleware,
@@ -20,6 +24,7 @@ app.add_middleware(
 )
 
 app.include_router(users.router)
+app.include_router(router_auth.router)
 
 @app.get("/")
 def root():
